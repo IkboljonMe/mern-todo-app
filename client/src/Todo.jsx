@@ -4,42 +4,48 @@ export default function Todo(props) {
   const { todo, setTodos } = props;
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const updateTodo = async (todoId, todoStatus) => {
-    const res = await fetch(`/api/todos/${todoId}`, {
-      method: "PUT",
-      body: JSON.stringify({ status: todoStatus }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+  const updateTodo = async (todoId, newStatus) => {
+    try {
+      const res = await fetch(`/api/todos/${todoId}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: newStatus }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok) throw new Error();
 
-    const json = await res.json();
-    if (json.acknowledged) {
       setTodos((currentTodos) => {
         return currentTodos.map((currentTodo) => {
           if (currentTodo._id === todoId) {
-            return { ...currentTodo, status: !currentTodo.status };
+            return { ...currentTodo, status: newStatus };
           }
           return currentTodo;
         });
       });
+    } catch {
+      alert("Could not update the todo. Please try again.");
     }
   };
 
-  const deleteTodo = async (todoId) => {
+  const deleteTodo = () => {
     // Display confirmation dialog
     setConfirmDelete(true);
   };
 
   const handleDeleteConfirm = async (todoId) => {
-    const res = await fetch(`/api/todos/${todoId}`, {
-      method: "DELETE",
-    });
-    const json = await res.json();
-    if (json.acknowledged) {
+    try {
+      const res = await fetch(`/api/todos/${todoId}`, {
+        method: "DELETE",
+      });
+      // 404 means it is already gone, so we can remove it from the list too
+      if (!res.ok && res.status !== 404) throw new Error();
+
       setTodos((currentTodos) => {
         return currentTodos.filter((currentTodo) => currentTodo._id !== todoId);
       });
+    } catch {
+      alert("Could not delete the todo. Please try again.");
     }
     // Close confirmation dialog
     setConfirmDelete(false);
@@ -56,11 +62,11 @@ export default function Todo(props) {
       <div className="mutations">
         <button
           className="todo__status"
-          onClick={() => updateTodo(todo._id, todo.status)}
+          onClick={() => updateTodo(todo._id, !todo.status)}
         >
           {todo.status ? "☑" : "☐"}
         </button>
-        <button className="todo__delete" onClick={() => deleteTodo(todo._id)}>
+        <button className="todo__delete" onClick={deleteTodo}>
           🗑️
         </button>
       </div>

@@ -149,6 +149,12 @@
   }
  }
 
+ .error {
+  text-align: center;
+  color: #ffb4b4;
+  margin-bottom: 1rem;
+ }
+
  @media (max-width: 420px) {
   .title {
     font-size: 2.5rem;

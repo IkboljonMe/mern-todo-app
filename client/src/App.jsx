@@ -4,31 +4,45 @@ import Todo from "./Todo";
 export default function App() {
   const [todos, setTodos] = useState([]);
   const [content, setContent] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function getTodos() {
-      const res = await fetch("/api/todos");
-      const todos = await res.json();
+      try {
+        const res = await fetch("/api/todos");
+        if (!res.ok) throw new Error();
+        const todos = await res.json();
 
-      setTodos(todos);
+        setTodos(todos);
+      } catch {
+        setError("Could not load todos. Is the server running?");
+      }
     }
     getTodos();
   }, []);
 
   const createNewTodo = async (e) => {
     e.preventDefault();
-    if (content.length > 3) {
-      const res = await fetch("/api/todos", {
-        method: "POST",
-        body: JSON.stringify({ todo: content }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const newTodo = await res.json();
+    if (content.trim().length > 3) {
+      try {
+        const res = await fetch("/api/todos", {
+          method: "POST",
+          body: JSON.stringify({ todo: content.trim() }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) throw new Error();
+        const newTodo = await res.json();
 
-      setContent("");
-      setTodos([...todos, newTodo]);
+        setError("");
+        setContent("");
+        setTodos((currentTodos) => [...currentTodos, newTodo]);
+      } catch {
+        setError("Could not create the todo. Please try again.");
+      }
+    } else {
+      setError("A todo must be longer than 3 characters.");
     }
   };
 
@@ -48,6 +62,7 @@ export default function App() {
           Create Todo
         </button>
       </form>
+      {error && <p className="error">{error}</p>}
       <div className="todos">
         {todos.length > 0 &&
           todos.map((todo) => (
